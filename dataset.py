@@ -1,4 +1,27 @@
 import numpy as np
+import torch
+import torch.utils.data as data_utils
+
+class Dataset(data_utils.Dataset):
+    def __init__(self, X, y):
+        super(Dataset, self).__init__()
+
+        self.X = torch.from_numpy(X).float()
+        self.y = torch.from_numpy(y).float()
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+
+
+def build_loader(X, y, batch_size, shuffle=True):
+    return data_utils.DataLoader(
+        Dataset(X, y),
+        batch_size = batch_size,
+        shuffle=shuffle
+        )
 
 
 def preprocess_lstm(sequence, n_steps=60, n_features=1):

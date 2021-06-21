@@ -3,7 +3,7 @@ import pandas as pd
 
 START_DATE = '2001-01-01'
 END_DATE = '2020-04-30'
-DATASETS_PATH = r"/home/liangxhao/workspace/datasets/stock_market_data/nasdaq/csv"
+DATASETS_PATH = r"F:\workspace\datasets\stock_market_data\nasdaq\csv"
 
 def read_data(symbol: str) -> pd.DataFrame:
     file_name = os.path.join(DATASETS_PATH, symbol + ".csv")
