@@ -1,9 +1,6 @@
 import os
 import pandas as pd
-
-START_DATE = '2012-01-01'
-END_DATE = '2016-12-31'
-DATASETS_PATH = r"/home/liangxhao/workspace/datasets/stock_market_data/forbes2000/csv"
+from config import DATASETS_PATH, START_DATE, END_DATE
 
 def read_data(symbol: str) -> pd.DataFrame:
     file_name = os.path.join(DATASETS_PATH, symbol + ".csv")

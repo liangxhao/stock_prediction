@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class LSTMPriceModel(nn.Module):
-    def __init__(self, input_size, output_size, num_layers = 1):
+    def __init__(self, input_size, output_size, num_layers = 2):
         super(LSTMPriceModel, self).__init__()
         self.input_size = input_size
         self.output_size = output_size

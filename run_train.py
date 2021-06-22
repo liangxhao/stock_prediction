@@ -30,7 +30,7 @@ model = network.LSTMPriceModel(obj_data.shape[1], obj_data.shape[1])
 model=model.to(device)
 model.train()
 print(model)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.1)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.05)
 
 epochs = 5000
 for epoch in range(epochs):
@@ -49,7 +49,7 @@ for epoch in range(epochs):
         avg_loss += loss.item()
         avg_error += mean_absolute_error(target.view(-1).detach().cpu().numpy(), pred.view(-1).detach().cpu().numpy())
 
-    if epoch > 5 and epoch % 2 == 0:
+    if epoch > 20 and epoch % 50 == 0:
         torch.save(model.state_dict(), f'{model_path}/model_{epoch}.pt')
     print(f"epoch: {epoch}, loss: {avg_loss/len(train_loader)}, error: {avg_error/len(train_loader)}")
 

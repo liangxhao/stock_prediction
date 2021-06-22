@@ -23,7 +23,7 @@ test_loader = dataset.build_loader(obj_data_norm, batch_size=1, n_steps=n_steps,
 model = network.LSTMPriceModel(obj_data.shape[1], obj_data.shape[1])
 print(model)
 
-ckpt_filename = f'{model_path}/model_300.pt'
+ckpt_filename = f'{model_path}/model_400.pt'
 state_dict = torch.load(ckpt_filename)
 model.load_state_dict(state_dict)
 model.eval()
@@ -34,6 +34,7 @@ model=model.to(device)
 targets = []
 preds = []
 for input, target in test_loader:
+    input = input.to(device)
     with torch.no_grad():
         model.init_hidden(1, device)
         output, _ = model(input)
@@ -42,15 +43,22 @@ for input, target in test_loader:
 
 preds = scaler.inverse_transform(np.concatenate(preds, axis=0))[:, -1]
 targets = scaler.inverse_transform(np.concatenate(targets, axis=0))[:, -1]
+index = company_data.index[n_steps:]
+
+# show_len = test_days * 4
+# preds = preds[-show_len:]
+# targets = targets[-show_len:]
+# index = index[-show_len:]
 
 # true
-plt.plot(company_data.index[n_steps:], targets)
+plt.plot(index, targets, label="true")
 
 # pred
-train_pos = n_steps
-test_pos = len(obj_data_norm) - test_days
-plt.plot(company_data.index[train_pos: test_pos], preds[:-test_days])
-plt.plot(company_data.index[test_pos:], preds[-test_days:])
-
+plt.plot(index[:-test_days], preds[:-test_days], color='y', label="train")
+plt.plot(index[-test_days:], preds[-test_days:], color='r', label='test')
+plt.legend()
+plt.xlabel('Date')
+plt.ylabel('Close Price')
+plt.title('Close Price Fitting')
 plt.show()
 
