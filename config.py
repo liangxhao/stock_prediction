@@ -4,7 +4,7 @@ batch_size = 128
 n_steps = 64
 # columns = ['Volume', 'Close']
 columns = ['Close']
-model_path = 'models_square'
+model_path = 'models_lstm'
 symbol = "GOOG"
 
 START_DATE = '2012-01-06'
