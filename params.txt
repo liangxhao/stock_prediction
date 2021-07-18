@@ -1,0 +1,1 @@
+--model informer --data stock --root_path F:\workspace\datasets\stock_market_data\forbes2000\csv --features MS --seq_len 64 --label_len 64 --pred_len 1 --e_layers 2 --d_layers 1 --attn prob --des 'Exp' --itr 1 --factor 3 --freq d
