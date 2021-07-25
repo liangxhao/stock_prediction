@@ -57,10 +57,14 @@ class StandardScaler():
     def __init__(self):
         self.mean = 0.
         self.std = 1.
+        self.target_index = -9999
     
     def fit(self, data):
         self.mean = data.mean(0)
         self.std = data.std(0)
+
+    def update_target_index(self, target_index):
+        self.target_index = target_index
 
     def transform(self, data):
         mean = torch.from_numpy(self.mean).type_as(data).to(data.device) if torch.is_tensor(data) else self.mean
@@ -68,6 +72,14 @@ class StandardScaler():
         return (data - mean) / std
 
     def inverse_transform(self, data):
-        mean = torch.from_numpy(self.mean).type_as(data).to(data.device) if torch.is_tensor(data) else self.mean
-        std = torch.from_numpy(self.std).type_as(data).to(data.device) if torch.is_tensor(data) else self.std
+        if self.target_index >= 0:
+            mean = self.mean[[self.target_index]]
+            std = self.std[[self.target_index]]
+        else:
+            mean = self.mean
+            std = self.std
+
+        mean = torch.from_numpy(mean).type_as(data).to(data.device) if torch.is_tensor(data) else mean
+        std = torch.from_numpy(std).type_as(data).to(data.device) if torch.is_tensor(data) else std
+
         return (data * std) + mean

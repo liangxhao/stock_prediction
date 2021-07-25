@@ -12,11 +12,13 @@ from utils.timefeatures import time_features
 import warnings
 warnings.filterwarnings('ignore')
 
+TEST_VAL_LEN = 120
 
 class Dataset_Stock_day(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='S', data_path='stock.csv',
-                 target='Close', scale=True, inverse=False, timeenc=0, freq='h', cols=None):
+                 target='Close', scale=True, inverse=False, timeenc=0, freq='h', cols=None,
+                 is_predict=False):
         # size [seq_len, label_len, pred_len]
         # info
         if size == None:
@@ -42,6 +44,9 @@ class Dataset_Stock_day(Dataset):
 
         self.root_path = root_path
         self.data_path = data_path
+
+        self.is_predict = is_predict
+        self.test_val_num = TEST_VAL_LEN
         self.__read_data__()
 
     def __read_data__(self):
@@ -51,12 +56,8 @@ class Dataset_Stock_day(Dataset):
                                           self.data_path))
         df_raw =df_raw.rename_axis('date').reset_index()
         data_num = len(df_raw)
-        test_num = 60
-        border1s = [0, data_num - self.seq_len - self.pred_len - test_num + 1]
-        border2s = [data_num - self.pred_len - test_num + 1, data_num]
-
-        border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type]
+        border1s = [0, data_num - self.seq_len - self.pred_len - self.test_val_num + 1]
+        border2s = [data_num - self.pred_len - self.test_val_num + 1, data_num]
 
         if self.features == 'M' or self.features == 'MS':
             cols_data = df_raw.columns[1:]
@@ -68,19 +69,37 @@ class Dataset_Stock_day(Dataset):
             train_data = df_data[border1s[0]:border2s[0]]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df_data.values)
+            self.scaler.update_target_index(df_data.columns.tolist().index(self.target))
         else:
             data = df_data.values
 
-        df_stamp = df_raw[['date']][border1:border2]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
+        border1 = border1s[self.set_type]
+        border2 = border2s[self.set_type]
 
+        if self.is_predict and self.set_type == 0:
+            border2 += self.pred_len - 1
+
+
+        self.all_data = data
         self.data_x = data[border1:border2]
         if self.inverse:
             self.data_y = df_data.values[border1:border2]
         else:
             self.data_y = data[border1:border2]
-        self.data_stamp = data_stamp
+
+        all_df_stamp = df_raw[['date']]
+        all_df_stamp['date'] = pd.to_datetime(all_df_stamp.date)
+        self.all_data_stamp = time_features(all_df_stamp, timeenc=self.timeenc, freq=self.freq)
+        self.data_stamp = self.all_data_stamp[border1:border2]
+
+        self.all_date_index = all_df_stamp['date']
+        self.date_index = self.all_date_index[border1:border2]
+
+
+    def get_index(self):
+        assert self.pred_len == 1
+        return self.date_index[:self.__len__()]
+
 
     def __getitem__(self, index):
         s_begin = index
@@ -367,6 +386,7 @@ class Dataset_Custom(Dataset):
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
 
+"""
 class Dataset_Pred(Dataset):
     def __init__(self, root_path, flag='pred', size=None, 
                  features='S', data_path='ETTh1.csv', 
@@ -457,3 +477,4 @@ class Dataset_Pred(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
+"""

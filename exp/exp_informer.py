@@ -1,4 +1,4 @@
-from data.data_loader import Dataset_Stock_day, Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
+from data.data_loader import Dataset_Stock_day, Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom
 from exp.exp_basic import Exp_Basic
 from models.model import Informer, InformerStack
 
@@ -6,6 +6,7 @@ from utils.tools import EarlyStopping, adjust_learning_rate
 from utils.metrics import metric
 
 import numpy as np
+import pandas as pd
 
 import torch
 import torch.nn as nn
@@ -14,6 +15,7 @@ from torch.utils.data import DataLoader
 
 import os
 import time
+import pickle
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -57,7 +59,8 @@ class Exp_Informer(Exp_Basic):
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
 
-    def _get_data(self, flag):
+
+    def _get_data(self, flag, is_predict=False):
         args = self.args
 
         data_dict = {
@@ -74,13 +77,14 @@ class Exp_Informer(Exp_Basic):
         Data = data_dict[self.args.data]
         timeenc = 0 if args.embed!='timeF' else 1
 
-        if flag == 'test':
-            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
-        elif flag=='pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
-            Data = Dataset_Pred
-        else:
+        if flag == 'train':
             shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+        else:
+            shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
+
+        if is_predict:
+            shuffle_flag = False; drop_last = False
+
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -91,7 +95,8 @@ class Exp_Informer(Exp_Basic):
             inverse=args.inverse,
             timeenc=timeenc,
             freq=freq,
-            cols=args.cols
+            cols=args.cols,
+            is_predict=is_predict
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -193,8 +198,13 @@ class Exp_Informer(Exp_Basic):
         
         return self.model
 
-    def test(self, setting):
-        test_data, test_loader = self._get_data(flag='test')
+    def test(self, setting, pred_flag, ckpt_file=None):
+        test_data, test_loader = self._get_data(flag=pred_flag, is_predict=True)
+
+        if ckpt_file and isinstance(ckpt_file, str) and os.path.exists(ckpt_file):
+            self.model.load_state_dict(torch.load(ckpt_file))
+        else:
+            raise ValueError
         
         self.model.eval()
         
@@ -207,55 +217,30 @@ class Exp_Informer(Exp_Basic):
             preds.append(pred.detach().cpu().numpy())
             trues.append(true.detach().cpu().numpy())
 
-        preds = np.array(preds)
-        trues = np.array(trues)
-        print('test shape:', preds.shape, trues.shape)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-        trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        print('test shape:', preds.shape, trues.shape)
+        preds = np.concatenate(preds).squeeze()
+        trues = np.concatenate(trues).squeeze()
+        print('test num:', len(preds), len(trues))
 
         # result save
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         print('mse:{}, mae:{}'.format(mse, mae))
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path+'pred.npy', preds)
-        np.save(folder_path+'true.npy', trues)
 
-        return
+        index = test_loader.dataset.get_index()
+        preds = pd.DataFrame(preds, index=index, columns=['pred'])
+        trues = pd.DataFrame(trues, index=index, columns=['true'])
 
-    def predict(self, setting, load=False):
-        pred_data, pred_loader = self._get_data(flag='pred')
-        
-        if load:
-            path = os.path.join(self.args.checkpoints, setting)
-            best_model_path = path+'/'+'checkpoint.pth'
-            self.model.load_state_dict(torch.load(best_model_path))
+        with open(folder_path + 'pred.pkl', 'wb') as f:
+            pickle.dump(preds, f)
+        with open(folder_path + 'true.pkl', 'wb') as f:
+            pickle.dump(trues, f)
 
-        self.model.eval()
-        
-        preds = []
-        
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(pred_loader):
-            pred, true = self._process_one_batch(
-                pred_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
-            preds.append(pred.detach().cpu().numpy())
+        return preds, trues
 
-        preds = np.array(preds)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-        
-        # result save
-        folder_path = './results/' + setting +'/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        
-        np.save(folder_path+'real_prediction.npy', preds)
-        
-        return
 
     def _process_one_batch(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark):
         batch_x = batch_x.float().to(self.device)
@@ -282,9 +267,11 @@ class Exp_Informer(Exp_Basic):
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-        if self.args.inverse:
+        if self.args.inverse_result:
             outputs = dataset_object.inverse_transform(outputs)
         f_dim = -1 if self.args.features=='MS' else 0
         batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
+        if self.args.inverse_result:
+            batch_y = dataset_object.inverse_transform(batch_y)
 
         return outputs, batch_y
