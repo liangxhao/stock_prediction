@@ -4,8 +4,8 @@ root_path: F:\workspace\datasets\stock_market_data\forbes2000\csv
 learning_rate: 0.0001
 batch_size: 32
 features: MS
-seq_len: 128
-label_len: 128
+seq_len: 64
+label_len: 64
 pred_len: 1
 e_layers: 2
 d_layers: 1
@@ -21,6 +21,6 @@ factor: 3
 freq: d
 train_epochs: 200
 mode: test
-ckpt_file: F:\workspace\Informer2020\checkpoints\google_128_informer_stock_ftMS_sl128_ll128_pl1_dm512_nh8_el2_dl1_df2048_atprob_fc3_ebtimeF_dtTrue_mxTrue_Exp_0\checkpoint.pth
+ckpt_file: F:\workspace\Informer2020\checkpoints\google_64_informer_stock_ftMS_sl64_ll64_pl1_dm512_nh8_el2_dl1_df2048_atprob_fc3_ebtimeF_dtTrue_mxTrue_Exp_0\checkpoint.pth
 inverse: False
 inverse_result: True
