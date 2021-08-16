@@ -13,7 +13,11 @@ apple = data_prepare.cutoff_data(apple)
 google = data_prepare.cutoff_data(google)
 facebook = data_prepare.cutoff_data(facebook)
 
+
 # data_vis.vis_pair(apple)
 # data_vis.vis_price(apple)
-data_vis.vis_line(apple, google, facebook)
+# data_vis.vis_line(apple, google, facebook)
 # data_vis.vis_kde(apple)
+
+p=apple.corr()
+p=1
