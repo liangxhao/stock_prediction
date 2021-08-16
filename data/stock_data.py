@@ -5,7 +5,7 @@ START_DATE = '2004-08-19'
 END_DATE = '2021-06-11'
 
 def read_data(file_name: str) -> pd.DataFrame:
-    data = pd.read_csv(file_name, index_col="Date", parse_dates=True, na_values=['nan'])
+    data = pd.read_csv(file_name, index_col="Date", parse_dates=True, dayfirst=True, na_values=['nan'])
     data = data.drop(columns=["Close"])
     data = data.rename(columns={
         "Adjusted Close": "Close"

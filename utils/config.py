@@ -2,7 +2,7 @@ import os
 import yaml
 import argparse
 
-CONFIG_FILE = 'v1.yaml'
+CONFIG_FILE = 'v2.yaml'
 ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../configs'))
 
 def merge_config(args: argparse.Namespace) -> argparse.Namespace:
