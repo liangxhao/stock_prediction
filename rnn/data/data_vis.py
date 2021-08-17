@@ -7,7 +7,7 @@ def vis_line(apple, google, facebook):
     column = "Close"
     # column = "Volume"
     plot_data = pd.concat([apple[column], google[column], facebook[column]], axis=1)
-    plot_data.set_axis(["apple", "google", "facebook"], axis='columns', inplace=True)
+    plot_data.set_axis(["apple", "google", "amazon"], axis='columns', inplace=True)
 
     plot_data.plot()
     plt.xlabel("Date")

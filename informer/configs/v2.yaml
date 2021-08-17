@@ -21,6 +21,6 @@ factor: 3
 freq: d
 train_epochs: 200
 mode: test
-ckpt_file: E:\workspace\Informer2020\checkpoints\google_64_informer_stock_ftMS_sl64_ll64_pl1_dm512_nh8_el2_dl1_df2048_atprob_fc3_ebtimeF_dtTrue_mxTrue_Exp_0\checkpoint.pth
+ckpt_file: E:\workspace\stock_prediction\informer\checkpoints\informer_stock_ftMS_sl64_ll64_pl1_dm512_nh8_el2_dl1_df2048_atprob_fc3_ebtimeF_dtTrue_mxTrue_Exp_0\checkpoint.pth
 inverse: False
 inverse_result: True

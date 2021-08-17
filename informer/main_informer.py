@@ -62,6 +62,7 @@ parser.add_argument('--devices', type=str, default='0,1,2,3',help='device ids of
 
 args = parser.parse_args()
 args = merge_config(args)
+args.checkpoints = os.path.join(os.path.dirname(__file__), 'checkpoints')
 
 args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
 

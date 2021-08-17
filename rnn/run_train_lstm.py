@@ -1,9 +1,8 @@
 import os
 import torch
-import data_prepare
-import dataset
+from rnn.data import dataset, data_prepare
 from rnn.models import network
-from rnn.models.transform import Transform
+from rnn.models.transform import Normalization
 from sklearn.metrics import mean_absolute_error
 
 from config import *
@@ -15,7 +14,7 @@ obj_data = company_data[columns].to_numpy()
 train_data = obj_data[:-test_days]
 test_data = obj_data[-test_days:]
 
-scaler = Transform()
+scaler = Normalization()
 train_data_norm = scaler.fit_transform(train_data)
 test_data_norm = scaler.transform(test_data)
 
@@ -25,7 +24,7 @@ model = network.LSTMPriceModel(obj_data.shape[1], obj_data.shape[1])
 model=model.to(device)
 model.train()
 print(model)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.05)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.01)
 
 epochs = 5000
 for epoch in range(epochs):
